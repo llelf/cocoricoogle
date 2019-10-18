@@ -1,5 +1,7 @@
 #!/usr/bin/env perl6
 
+use v6.d;
+
 # would be (maybe) better to use XML protocol, but I cannot be arsed.
 constant $coqtop = 'coqtop';
 
@@ -46,11 +48,11 @@ sub MAIN (Str $query) {
   coq.say: "Search _ in ssrnat ssrbool div";
 
   my $xs = coq.succ;
-  my @r = $xs.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
+  my @defs = $xs.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
   my @foralls = gather { for («a», «a b», «a b c») { .take for .permutations } }
-  my $n_search = @r * @foralls;
+  my $n_search = @defs * @foralls;
 
-  nb "{+@r} entries. {$n_search} to search";
+  nb "{+@defs} entries. {$n_search} to search";
   print "\n";
 
   my %found;
@@ -59,19 +61,19 @@ sub MAIN (Str $query) {
     # print "\c[backspace]" x 30;
     # print $args;
 
-    for @r -> $name {
-      next if %found{$name};
-      #say "----------- $name";
+    for @defs -> $def {
+      next if %found{$def};
+      #say "----------- $def";
 
       my $type = "forall $args, $query";
       #nb $type;
-      coq.say: "Check $name : $type";
+      coq.say: "Check $def : $type";
 
       my $z = coq.succ;
 
-      if $z && ! %found{$name}++ { #found
+      if $z && ! %found{$def}++ { #found
 
-        coq.say: "Check $name";
+        coq.say: "Check $def";
 
         my $bout = coq.succ;
         say $bout;
