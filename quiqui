@@ -1,5 +1,22 @@
 #!/usr/bin/env perl6
 
+constant $marker = 'eeeeeee';
+constant $prompt = "Expands to: Constant Top.eeeeeee";
+
+
+
+sub succ ($coq) {
+  gather loop {
+      my $s = $coq.receive; 
+      next unless $s;
+      next if $s ~~ / ^ $marker /;
+      last if $s ~~ / $prompt /;
+      take $s;
+  };
+}
+
+sub nb ($s) { say ($s ~ '.').fmt: '(* %-15s *)' }
+
 sub MAIN (Str $query) {
 
   my \coq = Proc::Async.new: :w, 'coqtop';
@@ -12,62 +29,37 @@ sub MAIN (Str $query) {
   # my $C = $C1.Channel;
   # my $C = coq.stdout.lines.Channel;
 
-  my $prompt = "Expands to: Constant Top.eeeeeee";
-
   coq.start;
   $C.receive;
 
-
   coq.say: "Definition eeeeeee := tt. About eeeeeee.";
-  say '--- HI.';
+  nb 'HI';
 
-  loop { my $s = $C.receive; 
-         last if $s ~~ / $prompt /;
-       };
+  succ $C;
 
-  coq.say: "From mathcomp Require Import ssrfun ssrnat. About eeeeeee.";
-  say '--- Loading.';
+  coq.say: "From mathcomp Require Import ssrnat ssrbool ssrfun div. About eeeeeee.";
+  nb 'Loading';
 
-  gather loop {
-      my $s = $C.receive; 
-      next unless $s;
-      next if $s ~~ / ^ eeeeeee /;
-      last if $s ~~ / $prompt /;
-      take $s;
+  succ $C;
 
+  coq.say: "Search _ in ssrnat ssrbool div. About eeeeeee.";
+  nb 'Searching';
 
-    # my $s = $C.receive; 
-    # last if $s ~~ / $prompt /
-  };
-
-
-  coq.say: "Search _ in ssrnat. About eeeeeee.";
-  say '--- Searching.';
-
-
-  my @xs = gather loop {
-      my $s = $C.receive; 
-      next unless $s;
-      next if $s ~~ / ^ eeeeeee /;
-      last if $s ~~ / $prompt /;
-      take $s;
-
-    # my $r = $C.receive;
-    # last if $r ~~ / $prompt /;
-    # take $r;
-  }
+  my @xs = succ $C;
 
   my @r = @xs.join("\n").split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
 
+  nb "{+@r} entries";
+  print "\n";
 
   for @r -> $name {
     # say "----------- $name";
 
-    my @foralls = 'forall ' X~ ('a', 'a b', 'a b c', 'a b c d');
-    for @foralls -> $forall {
+    my @foralls = gather { for («a», «a b») { .take for .permutations } }
 
+    for @foralls -> $args {
 
-    coq.say: "Check $name : $forall, $query. About eeeeeee.";
+    coq.say: "Check $name : forall $args, $query. About eeeeeee.";
 
     my @z = gather loop {
       my $s = $C.receive; 
@@ -104,6 +96,6 @@ sub MAIN (Str $query) {
   }
   
 
-  say '--- THXBYE.';
+  nb 'THXBYE';
 
 }
