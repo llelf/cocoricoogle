@@ -53,41 +53,40 @@ sub MAIN (Str $query) {
   nb "{+@r} entries";
   print "\n";
 
+  my @foralls = gather { for («a», «a b», «a b c») { .take for .permutations } }
+
+  for @foralls.sort -> $args {
+    # print "\c[backspace]" x 30;
+    # print $args;
+
   for @r -> $name {
-    # say "----------- $name";
+    #say "----------- $name";
 
-    my @foralls = gather { for («a», «a b») { .take for .permutations } }
 
-    for @foralls -> $args {
+      my $type = "forall $args, $query";
+      #nb $type;
+      coq.say: "Check $name : $type . About eeeeeee.";
 
-    coq.say: "Check $name : forall $args, $query. About eeeeeee.";
+    my $z = succ $C;
 
-    my @z = gather loop {
-      my $s = $C.receive; 
-      next unless $s;
-      next if $s ~~ / ^ eeeeeee /;
-      last if $s ~~ / $prompt /;
-      take $s;
-    };
-
-    if @z {
+    if $z {
 
     coq.say: "Check $name. About eeeeeee.";
 
-    my @bout = gather loop {
-      my $s = $C.receive; 
-      next unless $s;
-      next if $s ~~ / ^ eeeeeee /;
-      last if $s ~~ / $prompt /;
-      take $s;
-    }
+    my $bout = succ $C;
 
-    .say for @bout;
-    print "\n";
+    say $bout;
 
     my $threshold = 7;
-    .say for @z.head($threshold);
-    say "   ‹…›" if @z > $threshold;
+    # .say for @z.head($threshold);
+    # say "   ‹…›" if @z > $threshold;
+
+    with $z.lines {
+      when * > $threshold { say .[0 ..^ $threshold] }
+      when 2 { say .[1] }
+      default { say $_ }
+    }
+
     print "\n\n";
 
     }
