@@ -1,4 +1,8 @@
 #!/usr/bin/env perl6
+# --------------------
+#  This is Perl (6!)
+# You have been warned
+# --------------------
 
 use v6.d;
 
@@ -23,7 +27,7 @@ sub succ ($coq --> Str) {
 
 sub nb ($s) { say ($s ~ '.').fmt: '(* %-30s *)' }
 
-sub MAIN (Str $query) {
+sub MAIN (Str $query, Str :$in = '') {
   my $proc = Proc::Async.new: :w, $coqtop;
   my $chan = $proc.stdout.lines.Channel;
   $proc.stderr.tap: -> $ { };
@@ -44,8 +48,8 @@ sub MAIN (Str $query) {
   coq.say: "From mathcomp Require Import ssrnat ssrbool ssrfun div";
   coq.succ;
 
-  nb 'Searching';
-  coq.say: "Search _ in ssrnat ssrbool div";
+  nb "Searching ({ $in ?? $in !! 'everything' })";
+  coq.say: "Search _ { $in ?? 'in ' ~ $in !! '' }";
 
   my $xs = coq.succ;
   my @defs = $xs.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
@@ -71,7 +75,7 @@ sub MAIN (Str $query) {
 
       my $z = coq.succ;
 
-      if $z && ! %found{$def}++ { #found
+      if $z && ! %found{$def}++ {
 
         coq.say: "Check $def";
 
