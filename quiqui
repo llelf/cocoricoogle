@@ -5,14 +5,15 @@ constant $prompt = "Expands to: Constant Top.eeeeeee";
 
 
 
-sub succ ($coq) {
+sub succ ($coq --> Str) {
   gather loop {
-      my $s = $coq.receive; 
-      next unless $s;
-      next if $s ~~ / ^ $marker /;
-      last if $s ~~ / $prompt /;
-      take $s;
-  };
+    with $coq.receive {
+      next unless $_;
+      next if / ^ $marker /;
+      last if / $prompt /;
+      .take;
+    }
+  } andthen .join("\n");
 }
 
 sub nb ($s) { say ($s ~ '.').fmt: '(* %-15s *)' }
@@ -45,9 +46,9 @@ sub MAIN (Str $query) {
   coq.say: "Search _ in ssrnat ssrbool div. About eeeeeee.";
   nb 'Searching';
 
-  my @xs = succ $C;
+  my $xs = succ $C;
 
-  my @r = @xs.join("\n").split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
+  my @r = $xs.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
 
   nb "{+@r} entries";
   print "\n";
