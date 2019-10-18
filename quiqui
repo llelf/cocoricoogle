@@ -1,6 +1,11 @@
 #!/usr/bin/env perl6
 
-constant $marker = 'eeeeeee';
+# would be (maybe) better to use XML protocol, but I cannot be arsed.
+constant $coqtop = 'coqtop';
+
+# coqtop is awful.  We add «About $marker» to everything we say to Coq, then $prompt
+# is our clue to stop waiting Coq.
+constant $marker = "eeeeeee_{ ('aa'..'zz').pick }";
 constant $prompt = "Expands to: Constant Top.$marker";
 
 sub succ ($coq --> Str) {
@@ -17,8 +22,7 @@ sub succ ($coq --> Str) {
 sub nb ($s) { say ($s ~ '.').fmt: '(* %-30s *)' }
 
 sub MAIN (Str $query) {
-
-  my $proc = Proc::Async.new: :w, 'coqtop';
+  my $proc = Proc::Async.new: :w, $coqtop;
   my $chan = $proc.stdout.lines.Channel;
   $proc.stderr.tap: -> $ { };
 
