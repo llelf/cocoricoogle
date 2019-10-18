@@ -1,0 +1,15 @@
+
+#+begin_src coq
+~/H/quiqui› ./quiqui 'a + b - a = b'
+(* HI.                            *)
+(* Loading.                       *)
+(* Searching.                     *)
+(* 670 entries. 6030 to search.   *)
+
+addKn
+     : forall n : nat, cancel (addn n) (subn^~ n)
+     : forall a b : nat, a + b - a = b
+
+
+(* THXBYE.                        *)
+#+end_src
