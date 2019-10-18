@@ -20,79 +20,78 @@ sub nb ($s) { say ($s ~ '.').fmt: '(* %-15s *)' }
 
 sub MAIN (Str $query) {
 
-  my \coq = Proc::Async.new: :w, 'coqtop';
+  my $proc = Proc::Async.new: :w, 'coqtop';
+  my $chan = $proc.stdout.lines.Channel;
+  $proc.stderr.tap: -> $ { };
 
-  my $C = coq.stdout.lines.Channel;
-  coq.stderr.tap: -> $ { };
-  # my $err = coq.stderr.lines.Channel;
+  class coq {
+    method say ($s) { $proc.say($s) }
+    method succ () { succ($chan) }
+  }
 
-  # my $C1 = coq.stdout.lines.merge: coq.stderr.lines;
-  # my $C = $C1.Channel;
-  # my $C = coq.stdout.lines.Channel;
+  $proc.start;
+  $chan.receive;
 
-  coq.start;
-  $C.receive;
-
-  coq.say: "Definition eeeeeee := tt. About eeeeeee.";
+  coq.say: "Definition $marker := tt. About eeeeeee.";
   nb 'HI';
 
-  succ $C;
+  coq.succ;
 
   coq.say: "From mathcomp Require Import ssrnat ssrbool ssrfun div. About eeeeeee.";
   nb 'Loading';
 
-  succ $C;
+  coq.succ;
 
   coq.say: "Search _ in ssrnat ssrbool div. About eeeeeee.";
   nb 'Searching';
 
-  my $xs = succ $C;
+  my $xs = coq.succ;
 
   my @r = $xs.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
 
-  nb "{+@r} entries";
+  my @foralls = gather { for («a», «a b», «a b c», «a b c d») { .take for .permutations } }
+
+  my $n_search = @r * @foralls;
+
+  nb "{+@r} entries. {$n_search} to search. ETA {($n_search/250/60).fmt('%.1fmin')}";
   print "\n";
 
-  my @foralls = gather { for («a», «a b», «a b c») { .take for .permutations } }
+
+  my %found;
 
   for @foralls.sort -> $args {
     # print "\c[backspace]" x 30;
     # print $args;
 
-  for @r -> $name {
-    #say "----------- $name";
-
+    for @r -> $name {
+      next if %found{$name};
+      #say "----------- $name";
 
       my $type = "forall $args, $query";
       #nb $type;
       coq.say: "Check $name : $type . About eeeeeee.";
 
-    my $z = succ $C;
+      my $z = coq.succ;
 
-    if $z {
+      if $z && ! %found{$name}++ { #found
 
-    coq.say: "Check $name. About eeeeeee.";
+        coq.say: "Check $name. About eeeeeee.";
 
-    my $bout = succ $C;
+        my $bout = coq.succ;
+        say $bout;
 
-    say $bout;
+        my $threshold = 7;
 
-    my $threshold = 7;
-    # .say for @z.head($threshold);
-    # say "   ‹…›" if @z > $threshold;
+        with $z.lines {
+          when * > $threshold { say .[0 ..^ $threshold] }
+          when 2 { say .[1] }
+          default { say $_ }
+        }
 
-    with $z.lines {
-      when * > $threshold { say .[0 ..^ $threshold] }
-      when 2 { say .[1] }
-      default { say $_ }
+        print "\n\n";
+
+      }
     }
-
-    print "\n\n";
-
-    }
-    }
-
-
   }
   
 
