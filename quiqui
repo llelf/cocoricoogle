@@ -1,9 +1,7 @@
 #!/usr/bin/env perl6
 
 constant $marker = 'eeeeeee';
-constant $prompt = "Expands to: Constant Top.eeeeeee";
-
-
+constant $prompt = "Expands to: Constant Top.$marker";
 
 sub succ ($coq --> Str) {
   gather loop {
@@ -16,7 +14,7 @@ sub succ ($coq --> Str) {
   } andthen .join("\n");
 }
 
-sub nb ($s) { say ($s ~ '.').fmt: '(* %-15s *)' }
+sub nb ($s) { say ($s ~ '.').fmt: '(* %-30s *)' }
 
 sub MAIN (Str $query) {
 
@@ -25,37 +23,31 @@ sub MAIN (Str $query) {
   $proc.stderr.tap: -> $ { };
 
   class coq {
-    method say ($s) { $proc.say($s) }
+    method say ($s) { $proc.say: "$s. About $marker." }
     method succ () { succ($chan) }
   }
 
   $proc.start;
   $chan.receive;
 
-  coq.say: "Definition $marker := tt. About eeeeeee.";
   nb 'HI';
-
+  coq.say: "Definition $marker := tt";
   coq.succ;
 
-  coq.say: "From mathcomp Require Import ssrnat ssrbool ssrfun div. About eeeeeee.";
   nb 'Loading';
-
+  coq.say: "From mathcomp Require Import ssrnat ssrbool ssrfun div";
   coq.succ;
 
-  coq.say: "Search _ in ssrnat ssrbool div. About eeeeeee.";
   nb 'Searching';
+  coq.say: "Search _ in ssrnat ssrbool div";
 
   my $xs = coq.succ;
-
   my @r = $xs.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
-
-  my @foralls = gather { for («a», «a b», «a b c», «a b c d») { .take for .permutations } }
-
+  my @foralls = gather { for («a», «a b», «a b c») { .take for .permutations } }
   my $n_search = @r * @foralls;
 
-  nb "{+@r} entries. {$n_search} to search. ETA {($n_search/250/60).fmt('%.1fmin')}";
+  nb "{+@r} entries. {$n_search} to search";
   print "\n";
-
 
   my %found;
 
@@ -69,13 +61,13 @@ sub MAIN (Str $query) {
 
       my $type = "forall $args, $query";
       #nb $type;
-      coq.say: "Check $name : $type . About eeeeeee.";
+      coq.say: "Check $name : $type";
 
       my $z = coq.succ;
 
       if $z && ! %found{$name}++ { #found
 
-        coq.say: "Check $name. About eeeeeee.";
+        coq.say: "Check $name";
 
         my $bout = coq.succ;
         say $bout;
@@ -89,12 +81,9 @@ sub MAIN (Str $query) {
         }
 
         print "\n\n";
-
       }
     }
   }
   
-
   nb 'THXBYE';
-
 }
