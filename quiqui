@@ -1,0 +1,109 @@
+#!/usr/bin/env perl6
+
+sub MAIN (Str $query) {
+
+  my \coq = Proc::Async.new: :w, 'coqtop';
+
+  my $C = coq.stdout.lines.Channel;
+  coq.stderr.tap: -> $ { };
+  # my $err = coq.stderr.lines.Channel;
+
+  # my $C1 = coq.stdout.lines.merge: coq.stderr.lines;
+  # my $C = $C1.Channel;
+  # my $C = coq.stdout.lines.Channel;
+
+  my $prompt = "Expands to: Constant Top.eeeeeee";
+
+  coq.start;
+  $C.receive;
+
+
+  coq.say: "Definition eeeeeee := tt. About eeeeeee.";
+  say '--- HI.';
+
+  loop { my $s = $C.receive; 
+         last if $s ~~ / $prompt /;
+       };
+
+  coq.say: "From mathcomp Require Import ssrfun ssrnat. About eeeeeee.";
+  say '--- Loading.';
+
+  gather loop {
+      my $s = $C.receive; 
+      next unless $s;
+      next if $s ~~ / ^ eeeeeee /;
+      last if $s ~~ / $prompt /;
+      take $s;
+
+
+    # my $s = $C.receive; 
+    # last if $s ~~ / $prompt /
+  };
+
+
+  coq.say: "Search _ in ssrnat. About eeeeeee.";
+  say '--- Searching.';
+
+
+  my @xs = gather loop {
+      my $s = $C.receive; 
+      next unless $s;
+      next if $s ~~ / ^ eeeeeee /;
+      last if $s ~~ / $prompt /;
+      take $s;
+
+    # my $r = $C.receive;
+    # last if $r ~~ / $prompt /;
+    # take $r;
+  }
+
+  my @r = @xs.join("\n").split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
+
+
+  for @r -> $name {
+    # say "----------- $name";
+
+    my @foralls = 'forall ' X~ ('a', 'a b', 'a b c', 'a b c d');
+    for @foralls -> $forall {
+
+
+    coq.say: "Check $name : $forall, $query. About eeeeeee.";
+
+    my @z = gather loop {
+      my $s = $C.receive; 
+      next unless $s;
+      next if $s ~~ / ^ eeeeeee /;
+      last if $s ~~ / $prompt /;
+      take $s;
+    };
+
+    if @z {
+
+    coq.say: "Check $name. About eeeeeee.";
+
+    my @bout = gather loop {
+      my $s = $C.receive; 
+      next unless $s;
+      next if $s ~~ / ^ eeeeeee /;
+      last if $s ~~ / $prompt /;
+      take $s;
+    }
+
+    .say for @bout;
+    print "\n";
+
+    my $threshold = 7;
+    .say for @z.head($threshold);
+    say "   ‹…›" if @z > $threshold;
+    print "\n\n";
+
+    }
+    }
+
+
+  }
+  
+
+  say '--- THXBYE.';
+
+}
