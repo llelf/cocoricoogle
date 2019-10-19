@@ -1,15 +1,15 @@
 
 #+begin_src coq
-~/H/quiqui› ./quiqui 'a + b - a = b'
+~/H/quiqui› ./quiqui -in=ssrnat 'a + b - _ = b'
 (* HI.                            *)
 (* Loading.                       *)
-(* Searching.                     *)
-(* 670 entries. 6030 to search.   *)
+(* Searching (ssrnat).            *)
+(* 453 entries. 4077 to search.   *)
 
 addKn
      : forall n : nat, cancel (addn n) (subn^~ n)
      : forall a b : nat, a + b - a = b
 
 
-(* THXBYE.                        *)
+(* 1 found. THXBYE.               *)
 #+end_src
