@@ -15,6 +15,7 @@ constant $marker = "quiqui_{ ('aa'..'zz').pick }";
 constant $prompt = "Expands to: Constant Top.$marker";
 
 constant $type-lines-threshold = 5;
+constant $default-arity        = '1-3';
 
 sub succ ($coq --> Str) {
   gather loop {
@@ -58,10 +59,13 @@ sub MAIN (Str $query,
   my $r = coq.succ;
   my @defs = $r.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' /).grep(so*);
 
-  my Int @fn = +.[0] … .[1] with $arity.split('-');
+  my Str $explicit-arity = $arity;
+  without $arity { $explicit-arity = $default-arity unless $query ~~ /forall/ }
+
+  my Int @fn = +.[0] … .[1] with $explicit-arity.split('-');
 
   my @foralls = False;
-  @foralls = gather { (.take for .permutations) for ([\,] ('a'..*)).[--«@fn] } if $arity;
+  @foralls = gather { (.take for .permutations) for ([\,] ('a'..*)).[--«@fn] } if $explicit-arity;
 
   btw "{+@defs} entries. {@defs×@foralls} to search" andthen print "\n";
 
