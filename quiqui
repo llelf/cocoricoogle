@@ -26,14 +26,14 @@ sub succ ($coq --> Str) {
   } andthen .join("\n")
 }
 
-sub nb ($s) { say "$s.".fmt: '(* %-30s *)' }
+sub btw ($s) { say "$s.".fmt: '(* %-30s *)' }
 
 sub MAIN (Str $query,
           Str :i(:$in),           #= modules to search
           Str :a(:$arity)         #= N or N-M
          )
 {
-  my $proc = Proc::Async.new: :w, $coqtop;
+  my Proc::Async $proc .= new: :w, $coqtop;
   my $chan = $proc.stdout.lines.Channel;
   $proc.stderr.tap: -> $ { };
 
@@ -44,15 +44,15 @@ sub MAIN (Str $query,
 
   $proc.start; fail unless $chan.receive ~~ /^ "Welcome to Coq"/;
 
-  nb <HI>;
+  btw <HI>;
   coq.say: "Definition $marker := tt";
   coq.succ;
 
-  nb <Loading>;
+  btw <Loading>;
   coq.say: "From mathcomp Require Import ssrnat ssrbool ssrfun div";
   coq.succ;
 
-  nb "Searching ({ $in || <everything> })";
+  btw "Searching ({ $in || <everything> })";
   coq.say: qq｢Search _ { "in $in" if $in }｣;
 
   my $r = coq.succ;
@@ -63,10 +63,9 @@ sub MAIN (Str $query,
   my @foralls = False;
   @foralls = gather { (.take for .permutations) for ([\,] ('a'..*)).[--«@fn] } if $arity;
 
-  nb "{+@defs} entries. {@defs×@foralls} to search";
-  print "\n";
+  btw "{+@defs} entries. {@defs×@foralls} to search" andthen print "\n";
 
-  my Bool %found will keep { nb ("{+$_} found. " if $_) ~ <THXBYE> }
+  my Bool %found will keep { btw ("{+$_} found. " if $_) ~ <THXBYE> }
 
   for @foralls.sort X @defs -> ($args, $def) {
     next if %found{$def};
@@ -80,13 +79,11 @@ sub MAIN (Str $query,
       coq.say: "Check $def";
       say coq.succ;
 
-      with $checked.lines {
-        when * > $type-lines-threshold { say .[0 ..^ $type-lines-threshold], "\n  ⋮" }
-        when 2  { say .[1] }
-        default { say $_ }
-      }
-
-      print "\n\n";
+      say do with $checked.lines {
+        when * > $type-lines-threshold { .[0 ..^ $type-lines-threshold], "\n  ⋮" }
+        when 2  { .[1] }
+        default {  $_  }
+      } andthen print "\n\n";
     }
   }
 
