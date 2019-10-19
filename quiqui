@@ -1,6 +1,6 @@
 #!/usr/bin/env perl6
 # --------------------
-#  This is Perl (6!)
+#  This is Perl(6!)
 # You have been warned
 # --------------------
 
@@ -38,7 +38,7 @@ sub MAIN (Str $query, Str :$in = '') {
   }
 
   $proc.start;
-  $chan.receive;
+  fail unless $chan.receive ~~ /^ "Welcome to Coq"/;
 
   nb 'HI';
   coq.say: "Definition $marker := tt";
@@ -52,48 +52,36 @@ sub MAIN (Str $query, Str :$in = '') {
   coq.say: "Search _ { $in ?? 'in ' ~ $in !! '' }";
 
   my $xs = coq.succ;
-  my @defs = $xs.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' / ).grep(so*);
-  my @foralls = gather { for («a», «a b», «a b c») { .take for .permutations } }
-  my $n_search = @defs * @foralls;
+  my @defs = $xs.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' /).grep(so*);
+  my @foralls = gather { for [\,] «a b c» { .take for .permutations } }
 
-  nb "{+@defs} entries. {$n_search} to search";
+  nb "{+@defs} entries. {@defs×@foralls} to search";
   print "\n";
+
+  LEAVE { nb 'THXBYE' }
 
   my %found;
 
-  for @foralls.sort -> $args {
-    # print "\c[backspace]" x 30;
-    # print $args;
+  for @foralls.sort X @defs -> ($args, $def) {
+    next if %found{$def};
 
-    for @defs -> $def {
-      next if %found{$def};
-      #say "----------- $def";
+    my $type = "forall $args, $query";
+    coq.say: "Check $def : $type";
 
-      my $type = "forall $args, $query";
-      #nb $type;
-      coq.say: "Check $def : $type";
+    if my $checked = coq.succ {
+      %found{$def}++;
 
-      my $z = coq.succ;
+      coq.say: "Check $def";
+      say coq.succ;
 
-      if $z && ! %found{$def}++ {
-
-        coq.say: "Check $def";
-
-        my $bout = coq.succ;
-        say $bout;
-
-        my $threshold = 7;
-
-        with $z.lines {
-          when * > $threshold { say .[0 ..^ $threshold] }
-          when 2 { say .[1] }
-          default { say $_ }
-        }
-
-        print "\n\n";
+      my $threshold = 7;
+      with $checked.lines {
+        when * > $threshold { say .[0 ..^ $threshold] }
+        when 2  { say .[1] }
+        default { say $_ }
       }
+
+      print "\n\n";
     }
   }
-  
-  nb 'THXBYE';
 }
