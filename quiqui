@@ -18,12 +18,12 @@ constant $type-lines-threshold = 5;
 
 sub succ ($coq --> Str) {
   gather loop {
-    with $coq.receive { next unless $_;
+    with $coq.receive { next unless .so;
                         next if / ^ $marker /;
                         last if / $prompt /;
                         .take;
                       }
-  } andthen .join("\n");
+  } andthen .join("\n")
 }
 
 sub nb ($s) { say "$s.".fmt: '(* %-30s *)' }
@@ -58,18 +58,15 @@ sub MAIN (Str $query,
   my $r = coq.succ;
   my @defs = $r.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' /).grep(so*);
 
-  my Int @fn = do with $arity.split('-') {
-    when 2 { +.[0] .. .[1] }
-    when 1 { +.[0] }
-  }
+  my Int @fn = +.[0] … .[1] with $arity.split('-');
 
   my @foralls = False;
-  @foralls = gather { (.take for .permutations) for ([\,] ('a'..*)).[@fn X-1] } if $arity;
+  @foralls = gather { (.take for .permutations) for ([\,] ('a'..*)).[--«@fn] } if $arity;
 
   nb "{+@defs} entries. {@defs×@foralls} to search";
   print "\n";
 
-  my Bool %found; KEEP { nb ("{+%found} found. " if %found) ~ <THXBYE> }
+  my Bool %found will keep { nb ("{+$_} found. " if $_) ~ <THXBYE> }
 
   for @foralls.sort X @defs -> ($args, $def) {
     next if %found{$def};
@@ -93,5 +90,5 @@ sub MAIN (Str $query,
     }
   }
 
-  True
+  <woah>
 }
