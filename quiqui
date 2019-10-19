@@ -27,7 +27,7 @@ sub succ ($coq --> Str) {
 
 sub nb ($s) { say ($s ~ '.').fmt: '(* %-30s *)' }
 
-sub MAIN (Str $query, Str :$in = '') {
+sub MAIN (Str $query, Str :$in, Str :$arity) {
   my $proc = Proc::Async.new: :w, $coqtop;
   my $chan = $proc.stdout.lines.Channel;
   $proc.stderr.tap: -> $ { };
@@ -51,9 +51,16 @@ sub MAIN (Str $query, Str :$in = '') {
   nb "Searching ({ $in ?? $in !! 'everything' })";
   coq.say: "Search _ { $in ?? 'in ' ~ $in !! '' }";
 
-  my $xs = coq.succ;
-  my @defs = $xs.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' /).grep(so*);
-  my @foralls = gather { for [\,] «a b c» { .take for .permutations } }
+  my $r = coq.succ;
+  my @defs = $r.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' /).grep(so*);
+
+  my @fn = do with $arity {
+    when /(\d+) '-' (\d+)/ { $/[0]..$/[1] }
+    when /\d+/ { $/ }
+    default { fail "WTF arity?" }
+  }
+
+  my @foralls = gather { for ([\,] ('a'..*)).[@fn X- 1] { .take for .permutations } }
 
   nb "{+@defs} entries. {@defs×@foralls} to search";
   print "\n";
