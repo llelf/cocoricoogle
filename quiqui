@@ -11,25 +11,26 @@ constant $coqtop = 'coqtop';
 
 # coqtop is awful.  We add «About $marker» to everything we say to Coq, then $prompt
 # is our clue to stop waiting Coq.
-constant $marker = "eeeeeee_{ ('aa'..'zz').pick }";
+constant $marker = "quiqui_{ ('aa'..'zz').pick }";
 constant $prompt = "Expands to: Constant Top.$marker";
+
+constant $type-lines-threshold = 5;
 
 sub succ ($coq --> Str) {
   gather loop {
-    with $coq.receive {
-      next unless $_;
-      next if / ^ $marker /;
-      last if / $prompt /;
-      .take;
-    }
+    with $coq.receive { next unless $_;
+                        next if / ^ $marker /;
+                        last if / $prompt /;
+                        .take;
+                      }
   } andthen .join("\n");
 }
 
-sub nb ($s) { say ($s ~ '.').fmt: '(* %-30s *)' }
+sub nb ($s) { say "$s.".fmt: '(* %-30s *)' }
 
 sub MAIN (Str $query,
-          Str :i(:$in),      #= modules to search
-          Str :a(:$arity)    #= N or N-M
+          Str :i(:$in),           #= modules to search
+          Str :a(:$arity)         #= N or N-M
          )
 {
   my $proc = Proc::Async.new: :w, $coqtop;
@@ -38,44 +39,42 @@ sub MAIN (Str $query,
 
   class coq {
     method say ($s) { $proc.say: "$s. About $marker." }
-    method succ () { succ($chan) }
+    method succ ()  { succ($chan) }
   }
 
-  $proc.start;
-  fail unless $chan.receive ~~ /^ "Welcome to Coq"/;
+  $proc.start; fail unless $chan.receive ~~ /^ "Welcome to Coq"/;
 
-  nb 'HI';
+  nb <HI>;
   coq.say: "Definition $marker := tt";
   coq.succ;
 
-  nb 'Loading';
+  nb <Loading>;
   coq.say: "From mathcomp Require Import ssrnat ssrbool ssrfun div";
   coq.succ;
 
-  nb "Searching ({ $in ?? $in !! 'everything' })";
-  coq.say: "Search _ { $in ?? 'in ' ~ $in !! '' }";
+  nb "Searching ({ $in || <everything> })";
+  coq.say: qq｢Search _ { "in $in" if $in }｣;
 
   my $r = coq.succ;
   my @defs = $r.split(/<(\n)>\S/).map(* ~~ / <( <.ident>+ % '.' )> ':' /).grep(so*);
 
   my Int @fn = do with $arity.split('-') {
-    when 2 { +.[0] .. +.[1] }
-    when 1 { +$_ }
+    when 2 { +.[0] .. .[1] }
+    when 1 { +.[0] }
   }
 
-  my @foralls = Nil;
-  @foralls = gather { for ([\,] ('a'..*)).[@fn X- 1] { .take for .permutations } } if $arity;
+  my @foralls = False;
+  @foralls = gather { (.take for .permutations) for ([\,] ('a'..*)).[@fn X-1] } if $arity;
 
   nb "{+@defs} entries. {@defs×@foralls} to search";
   print "\n";
 
-  my Bool %found;
-  KEEP { nb ("{+%found} found. " if %found) ~ <THXBYE> }
+  my Bool %found; KEEP { nb ("{+%found} found. " if %found) ~ <THXBYE> }
 
   for @foralls.sort X @defs -> ($args, $def) {
     next if %found{$def};
 
-    my $type = qq｢{$args ?? "forall $args," !! ""} $query｣;
+    my $type = qq｢{"forall $args," if $args} $query｣;
     coq.say: "Check $def : $type";
 
     if my $checked = coq.succ {
@@ -84,9 +83,8 @@ sub MAIN (Str $query,
       coq.say: "Check $def";
       say coq.succ;
 
-      my $threshold = 7;
       with $checked.lines {
-        when * > $threshold { say .[0 ..^ $threshold] }
+        when * > $type-lines-threshold { say .[0 ..^ $type-lines-threshold], "\n  ⋮" }
         when 2  { say .[1] }
         default { say $_ }
       }
