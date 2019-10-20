@@ -1,7 +1,7 @@
 
 Ltac arity x :=
   let ty := type of x in
-  let arity := match eval red in ty with
+  let arity := match eval hnf in ty with
   | forall a b c d e f, _ => 6
   | forall a b c d e, _   => 5
   | forall a b c d, _     => 4
