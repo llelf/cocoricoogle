@@ -34,7 +34,7 @@ sub MAIN (Str $query,
           Str :a(:$arity)         #= N or N-M
          )
 {
-  my Proc::Async $proc .= new: :w, $coqtop;
+  my Proc::Async $proc .= new: :w, $coqtop, «-w -all»;
   my $chan = $proc.stdout.lines.Channel;
   $proc.stderr.tap: -> $ { };
 
