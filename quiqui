@@ -62,12 +62,15 @@ sub MAIN (Str $query,
   my Str $explicit-arity = $arity;
   without $arity { $explicit-arity = $default-arity unless $query ~~ /forall/ }
 
-  my Int @fn = +.[0] … .[1] with $explicit-arity.split('-');
-
   my @foralls = False;
-  @foralls = gather { (.take for .permutations) for ([\,] ('a'..*)).[--«@fn] } if $explicit-arity;
+  if $explicit-arity {
+    my Int @fn = +.[0] … .[1] with $explicit-arity.split('-');
+    @foralls = gather {
+      (.take for .permutations) for ([\,] ('a'..*)).[--«@fn]
+    }
+  }
 
-  btw "{+@defs} entries. {@defs×@foralls} to search" andthen print "\n";
+  btw "{+@defs} entries. {@defs×@foralls} variants" andthen print "\n";
 
   my Bool %found will keep { btw ("{+$_} found. " if $_) ~ <THXBYE> }
 
