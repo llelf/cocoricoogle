@@ -19,10 +19,9 @@ constant $default-arity        = '1-3';
 
 sub succ ($coq --> Str) {
   gather loop {
-    with $coq.receive { next unless .so;
-                        next if / ^ $marker /;
+    with $coq.receive { next if / ^ $marker /;
                         last if / $prompt /;
-                        .take;
+                        .take if .so;
                       }
   } andthen .join("\n")
 }
@@ -87,12 +86,12 @@ sub MAIN (Str $query,
       say coq.succ;
 
       say do with $checked.lines {
-        when * > $type-lines-threshold { .[0 ..^ $type-lines-threshold], "\n  ⋮" }
+        when * > $type-lines-threshold { .[0 ..^ $type-lines-threshold] ~ "\n  ⋮" }
         when 2  { .[1] }
         default {  $_  }
       } andthen print "\n\n";
     }
   }
 
-  <woah>
+  <that's all>
 }
