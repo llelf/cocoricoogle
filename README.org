@@ -1,3 +1,9 @@
+#+title: An evening experiment in finding lemmas
+
+Why? Because normal ~Search~ won’t find it.
+
+How to use: =quiqui --help=, this README.
+You would probably need to do ~apt/pkg/… install rakudo~.
 
 #+begin_src coq
 ~/H/quiqui› ./quiqui -in=ssrnat 'a + b - _ = b'
@@ -13,3 +19,60 @@ addKn
 
 (* 1 found. THXBYE.               *)
 #+end_src
+
+
+* V1 (master branch)
+
+Get a list of definitions by doing ~Search _ in ⟨modules⟩~.  Try to match each using
+~Check~.
+
+Speed: ≈10000/minute.
+
+
+** mode A
+
+Query is =forall a b…, …= or =… -> forall a b…, …=.
+
+: ./quiqui -in=ssrnat  'forall x y z, x*_ = x*y + x*z'
+
+
+** mode B
+
+Query doesn’t contain =forall=. Then =--arity= / =-a= comes into play. Default is
+=1-3=.  Free variables are assumed to be =a=, =b=, =c=, and so forth.
+
+=Quiqui= then will try all variants of arities and all permutations of variables,
+i. e.
+#+begin_src coq
+(forall a b) (forall b a) (forall a b c) …
+#+end_src
+
+Gotchas (~Check~ is too clever):
+- [[https://github.com/coq/coq/issues/10849#issuecomment-544257122][WTF#1]]. Search for ~addnAC~ and get ~PeanoNat.Nat.add_shuffle0~ for free.
+- ~addnC~ matches ~forall a b, _ + b = _ + _ b~.
+- ~(1 * a)%coq_nat = a~ matches ~a + 0 = a~.
+
+* V2
+
+Match using =Ltac=. Does works and is measurably faster.  Gothas:
+- low boundary of arity cannot be arbitrary, because =Ltac= is defined once and
+  ~match ty with forall a, a+b=_ => _ end~ is an error.
+- different results of V1
+
+* V3
+
+Get the definition list and do everything else in Ltac. Needs a way pass a large(ish)
+(at least 1000, but 50000 would be nice) list of definitions as an argument.
+
+* V4
+
+Just fix ~Search~.
+
+* TODO¹
+
+- subterms/coercions
+- =ssr.ssrbool= vs =ssrbool=
+- ~a→b~ vs ~a==b~ vs ~reflect a b~
+
+
+¹) is because github doesn't render it if it's just a «TODO».
