@@ -11,7 +11,7 @@ constant $coqtop = 'coqtop';
 
 # coqtop is awful.  We add «About $marker» to everything we say to Coq, then $prompt
 # is our clue to stop waiting Coq.
-constant $marker = "quiqui_{ ('a'..'z').roll(5).join }";
+constant $marker = "cocoricoogle_{ ('a'..'z').roll(5).join }";
 constant $prompt = "Expands to: Constant Top.$marker";
 
 constant $type-lines-threshold = 5;
